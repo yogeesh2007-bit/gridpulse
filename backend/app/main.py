@@ -10,10 +10,10 @@ from fastapi.responses import FileResponse, HTMLResponse, Response
 from .api import auth as auth_api, driver as driver_api, explain as explain_api, geo as geo_api
 from .api import bulbs as bulbs_api, operator as operator_api, ws as ws_api
 from .config import WEB_DIST, settings
-from .db import SessionLocal, init_db
+from .db import SessionLocal, init_db, utcnow
 from .routers import control, dashboard, devices, drivers, reservations, stations, telemetry
 from .seed import seed_database
-from .services import auth_service, realtime, scheduler
+from .services import auth_service, bulbs, realtime, scheduler
 from .services.control import refresh_control_state
 from .services.devices import ensure_placeholder_devices
 
@@ -25,6 +25,7 @@ async def lifespan(_: FastAPI):
     init_db()
     with SessionLocal() as db:
         seed_database(db, reset=False)  # only seeds an empty database
+        bulbs.seed_demo_if_empty(db, utcnow())  # first start: bulb-01 with a consistent history
         ensure_placeholder_devices(db)  # also upgrades databases created before Milestone 3
         refresh_control_state(db)
         if settings.demo_users_enabled:

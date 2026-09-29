@@ -210,3 +210,32 @@ def test_train_context_marks_only_the_bulb_as_live(client, operator):
     assert [p["device_id"] for p in live] == ["bulb-01"] and live[0]["state"] == "on" and live[0]["seeded"] is False
     assert all(p["seeded"] and not p["live"] for p in t["light_points"] if p["device_id"] != "bulb-01")
     assert all(s["seeded"] and not s["live"] for s in t["systems"]) and t["coach"]["id"] == "C1"
+
+
+# ---- seeded demo data ----------------------------------------------------------------------------------------------------
+def test_seed_tells_one_consistent_story(client, operator):
+    from app.services import bulbs as bulb_service
+
+    with SessionLocal() as db:
+        bulb_service.seed_demo(db, utcnow())
+    n = node(client, operator[0])
+    assert (n["device_id"], n["coach_id"], n["device_type"], n["state"], n["desired_on"], n["sync"]) == ("bulb-01", "C1", "coach_light", "on", True, "in_sync")
+    assert (n["last_source"], n["mode"], n["commanded_by"], n["online"], n["health"]) == ("manual_button_on", "manual_override", "button", True, "healthy")
+    ev = client.get("/api/operator/bulbs/bulb-01/events", headers=operator[0]).json()
+    assert [(e["source"], e["on"]) for e in ev] == [("manual_button_on", True), ("manual_button_off", False), ("manual_button_on", True), ("boot", False)]
+    assert ev[0]["on"] == (n["state"] == "on")  # the newest event matches the current state
+
+
+def test_operator_reset_reseeds_the_light_and_startup_seeds_only_when_empty(client, operator):
+    from app.services import bulbs as bulb_service
+
+    report(client, False, "manual_button_off")  # someone changed it
+    assert node(client, operator[0])["state"] == "off"
+    client.post("/api/operator/seed", headers=operator[0])
+    assert node(client, operator[0])["state"] == "on"
+    with SessionLocal() as db:
+        bulb_service.seed_demo_if_empty(db, utcnow())  # already has data: must not overwrite
+    report(client, False, "manual_button_off")
+    with SessionLocal() as db:
+        bulb_service.seed_demo_if_empty(db, utcnow())
+    assert node(client, operator[0])["state"] == "off"

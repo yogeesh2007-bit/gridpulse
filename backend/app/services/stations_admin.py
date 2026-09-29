@@ -8,6 +8,8 @@ from sqlalchemy.orm import Session as DbSession
 from ..models import Station
 from ..seed import seed_database
 from .control import refresh_control_state
+from ..db import utcnow
+from . import bulbs
 from .devices import ensure_placeholder_devices
 from .state import advance_state, reschedule_station, station_live
 
@@ -40,5 +42,6 @@ def reset_demo_data(
     """(Re)seed the two demo stations and their starting queue. Accounts are never touched."""
     result = seed_database(db, reset=reset, center_lat=center_lat, center_lon=center_lon)
     ensure_placeholder_devices(db)
+    bulbs.seed_demo(db, utcnow())  # bulb-01 and its history match the demo story
     refresh_control_state(db)  # record the baseline command for every station
     return result

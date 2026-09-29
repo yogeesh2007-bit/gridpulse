@@ -7,10 +7,10 @@ Model: every node has a *desired* state (what the backend wants) and a *reported
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session as DbSession
 
 from ..models import BulbDevice, BulbEvent
@@ -43,6 +43,33 @@ def ensure_default(db: DbSession) -> None:
     if db.scalar(select(BulbDevice.id).limit(1)) is None:
         get_or_create(db, DEFAULT_DEVICE)
         db.commit()
+
+
+def seed_demo(db: DbSession, now: datetime) -> None:
+    """Seed bulb-01 with a coherent history: booted OFF, then manual switch events, currently ON (as the relay would be).
+    The state, the event log and the metadata all tell the same story; timestamps are relative to `now`."""
+    db.execute(delete(BulbEvent))
+    db.execute(delete(BulbDevice))
+    ago = lambda **kw: now - timedelta(**kw)  # noqa: E731
+    story = [  # (when, source, bulb_on)
+        (ago(minutes=42), "boot", False),
+        (ago(minutes=30), "manual_button_on", True),
+        (ago(minutes=18), "manual_button_off", False),
+        (ago(minutes=3), "manual_button_on", True),
+    ]
+    for ts, source, on in story:
+        db.add(BulbEvent(device_id=DEFAULT_DEVICE, ts=ts, kind="status", on=on, source=source, detail="rssi -58"))
+    db.add(BulbDevice(
+        device_id=DEFAULT_DEVICE, name=DEFAULT_DEVICE, desired_on=True, reported_on=True, last_source="manual_button_on",
+        last_seen_at=ago(seconds=4), last_state_change_at=ago(minutes=3), commanded_at=ago(minutes=3), commanded_by="button",
+        command_seq=3, rssi=-58, firmware="gp-bulb 1.0.0", mode="manual_override",
+    ))
+    db.commit()
+
+
+def seed_demo_if_empty(db: DbSession, now: datetime) -> None:
+    if db.scalar(select(BulbDevice.id).limit(1)) is None:
+        seed_demo(db, now)
 
 
 def _log(db: DbSession, device_id: str, kind: str, on: Optional[bool], source: Optional[str], detail: Optional[str], now: datetime) -> None:
