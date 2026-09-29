@@ -4,7 +4,7 @@ Browser -> Vercel (React app; `/api/*` rewritten to Render, so sign-in cookies s
 Browser -> Render directly for the live WebSocket (Vercel cannot proxy WebSockets; auth is the token in the URL)
 
 1. **Backend (Render):** New > Blueprint > pick this repo. Set `OPERATOR_INVITE_CODE` (and optionally `OPENROUTER_API_KEY`).
-   Service name must be `gridpulse-api`, or edit the host in `web/vercel.json` and `web/.env.production`.
+   Service name must be `gridpulse-api`, or edit the host in `web/vercel.json` (rewrites and `build.env.VITE_WS_URL`).
 2. **Frontend (Vercel):** `cd web && vercel login && vercel --prod` (or import the repo with Root Directory = `web`).
 3. Open the Vercel URL, sign up, and use your operator invite code to create an operator.
 
