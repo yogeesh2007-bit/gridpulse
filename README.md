@@ -8,6 +8,8 @@ Smart EV-charging recommendation, reservation and grid-aware control, as **one w
   OpenRouter is an optional layer that only rewords the explanation.
 * **Hardware:** ESP32 firmware + simulator share one device protocol (`firmware/`, `docs/wiring.md`). Low-voltage demo only.
 
+**Live:** https://gridpulse-topaz.vercel.app · **Summary and screenshots:** [docs/FINAL_SUMMARY.md](docs/FINAL_SUMMARY.md)
+
 ## Run it (one URL)
 
 ```powershell
