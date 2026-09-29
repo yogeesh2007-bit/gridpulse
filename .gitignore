@@ -15,3 +15,7 @@ node_modules/
 web/dist/
 e2e-shots/
 npm_install.log
+*.db-wal
+*.db-shm
+*.db-journal
+*.sqlite
