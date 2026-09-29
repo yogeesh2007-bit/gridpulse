@@ -27,6 +27,9 @@ const PING_EVERY_MS = 25_000;
 const STALE_AFTER_MS = 20_000; // the server pushes every ~2 s; silence this long means a dead connection
 
 const wsUrl = (token: string) => {
+  // Behind Vercel the HTTP API is proxied by rewrites, but WebSockets cannot be: connect to the backend directly.
+  const direct = import.meta.env.VITE_WS_URL as string | undefined;
+  if (direct) return `${direct}?token=${encodeURIComponent(token)}`;
   const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
   return `${proto}//${window.location.host}/api/ws?token=${encodeURIComponent(token)}`;
 };

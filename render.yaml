@@ -1,0 +1,28 @@
+# Render Blueprint: the FastAPI backend (API + WebSockets + background scheduler).
+# The React app is deployed separately on Vercel (web/), which proxies /api to this service.
+services:
+  - type: web
+    name: gridpulse-api            # URL becomes https://gridpulse-api.onrender.com  (must match web/vercel.json)
+    runtime: python
+    plan: free                     # free = data resets on restart; add a disk on a paid plan (see docs/deploy.md)
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips="*"
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: APP_ENV
+        value: production
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DEVICE_API_KEY
+        generateValue: true
+      - key: OPERATOR_INVITE_CODE
+        sync: false                # you enter this in the Render dashboard (needed to register operators)
+      - key: OPENROUTER_API_KEY
+        sync: false                # optional
+      - key: NOMINATIM_USER_AGENT
+        value: GridPulse/1.0 (set-your-contact-email)
