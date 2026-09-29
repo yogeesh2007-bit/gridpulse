@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+.env
+.venv/
+*.db
+.pytest_cache/
+
+server.log
+server.err.log
+*.db
+.pio/
+.vscode/
+.dev_jwt_secret
+node_modules/
+web/dist/
+e2e-shots/
+npm_install.log

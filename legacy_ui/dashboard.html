@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GridPulse – Operator Dashboard</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body data-page="dashboard">
+  <div class="wrap wide">
+    <header class="top">
+      <h1>GridPulse <small>Operator dashboard</small></h1>
+      <div class="row">
+        <label class="row small" style="margin:0;font-weight:500">
+          <input id="autoRefresh" type="checkbox" checked> Auto-refresh (3 s)
+        </label>
+        <button id="btnRefresh" type="button" class="small">Refresh now</button>
+        <button id="btnReseed" type="button" class="small danger" title="Wipes all data and restores the demo scenario">Reset demo data</button>
+        <nav><a href="/driver">Driver app</a></nav>
+      </div>
+    </header>
+
+    <div id="dashError" class="notice err hidden" role="alert"></div>
+    <div id="sysLine" class="muted small" style="margin-bottom:10px"></div>
+
+    <section class="tiles" id="tiles" aria-label="Summary"></section>
+    <section class="stations" id="stations" aria-label="Stations"></section>
+
+    <section class="card hero" aria-labelledby="lrH">
+      <h2 id="lrH">Latest recommendation <span class="muted small" id="lrWho"></span></h2>
+      <div id="latestRec"></div>
+    </section>
+
+    <section class="card">
+      <h2>Devices <span class="muted small">real ESP32 vs simulated · freshness · commands &amp; acknowledgments</span></h2>
+      <div class="tablewrap"><table id="devicesTable"></table></div>
+    </section>
+
+    <section class="card">
+      <h2>Reservation timeline <span class="muted small">next 2 hours</span></h2>
+      <div id="timeline"></div>
+    </section>
+
+    <section class="split">
+      <div class="card">
+        <h2>Live driver locations</h2>
+        <div id="liveDrivers"></div>
+      </div>
+      <div class="card">
+        <h2>Route ETA to each station <span class="muted small" id="etaWho"></span></h2>
+        <div id="routeEtas"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Control decision log <span class="muted small">commands are simulated until the ESP32 confirms them</span></h2>
+      <div class="tablewrap"><table id="controlLog"></table></div>
+    </section>
+
+    <section class="card">
+      <h2>Latest driver requests &amp; recommendations</h2>
+      <div class="tablewrap"><table id="requestsTable"></table></div>
+    </section>
+
+    <section class="card">
+      <h2>Reservations</h2>
+      <div class="tablewrap"><table id="reservationsTable"></table></div>
+      <h3 style="margin-top:14px">Recently finished</h3>
+      <div class="tablewrap"><table id="finishedTable"></table></div>
+    </section>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GridPulse – Driver</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body data-page="driver">
+  <div class="wrap">
+    <header class="top">
+      <h1>GridPulse <small>Driver</small></h1>
+      <nav><a href="/dashboard">Operator dashboard</a></nav>
+    </header>
+
+    <div id="secureBanner" class="notice warn hidden">
+      Browser location only works on <b>HTTPS</b> or <b>localhost</b>. You are on an insecure address, so GPS
+      will be blocked — use the manual location below, or open this app through an HTTPS tunnel
+      (e.g. <span class="coords">cloudflared tunnel --url http://localhost:8000</span>).
+    </div>
+
+    <section class="card" aria-labelledby="locH">
+      <h2 id="locH">1. Your location</h2>
+      <div class="row">
+        <button id="btnLocate" class="primary" type="button">Use my location</button>
+        <span id="locStatus" class="muted small" role="status">Not shared yet</span>
+      </div>
+      <div id="locReadout" class="hidden" style="margin-top:10px">
+        <div class="grid2">
+          <div><div class="muted small">Latitude</div><div id="latOut" class="coords">–</div></div>
+          <div><div class="muted small">Longitude</div><div id="lonOut" class="coords">–</div></div>
+        </div>
+        <div class="muted small" style="margin-top:6px">Accuracy: <span id="accOut">–</span> · Source: <span id="srcOut">–</span></div>
+      </div>
+      <div id="liveBox" class="notice hidden" style="margin-top:12px" role="status" aria-live="polite">
+        <div><b>Live tracking:</b> <span id="liveLine">waiting for a charging request…</span></div>
+        <div id="liveEtas" class="small muted" style="margin-top:4px"></div>
+      </div>
+      <details id="manualBox" style="margin-top:12px">
+        <summary>Enter location manually</summary>
+        <div class="grid2" style="margin-top:10px">
+          <div class="field"><label for="manLat">Latitude</label><input id="manLat" type="number" step="any" inputmode="decimal"></div>
+          <div class="field"><label for="manLon">Longitude</label><input id="manLon" type="number" step="any" inputmode="decimal"></div>
+        </div>
+        <button id="btnManual" type="button">Use these coordinates</button>
+      </details>
+    </section>
+
+    <form id="needForm" class="card" aria-labelledby="needH" novalidate>
+      <h2 id="needH">2. Charging need</h2>
+      <div class="field">
+        <label for="name">Name (optional)</label>
+        <input id="name" type="text" maxlength="60" placeholder="Driver" autocomplete="name">
+      </div>
+      <div class="grid2">
+        <div class="field"><label for="socNow">Current battery (%)</label><input id="socNow" type="number" min="0" max="100" step="1" value="20" inputmode="numeric" required></div>
+        <div class="field"><label for="socTarget">Target battery (%)</label><input id="socTarget" type="number" min="1" max="100" step="1" value="80" inputmode="numeric" required></div>
+      </div>
+      <div class="field">
+        <label for="deadline">Must be done within (minutes from now)</label>
+        <input id="deadline" type="number" min="5" max="1440" step="5" value="120" inputmode="numeric" required>
+        <div class="row" style="margin-top:6px">
+          <button type="button" class="chip" data-deadline="45">45</button>
+          <button type="button" class="chip" data-deadline="90">90</button>
+          <button type="button" class="chip" data-deadline="120">2 h</button>
+          <button type="button" class="chip" data-deadline="240">4 h</button>
+        </div>
+      </div>
+      <details style="margin-bottom:12px">
+        <summary>Vehicle details</summary>
+        <div class="grid2" style="margin-top:10px">
+          <div class="field"><label for="battery">Battery size (kWh)</label><input id="battery" type="number" min="10" max="250" step="1" value="40"></div>
+          <div class="field"><label for="maxKw">Max charge rate (kW)</label><input id="maxKw" type="number" min="3" max="350" step="1" value="50"></div>
+        </div>
+      </details>
+      <div id="formError" class="notice err hidden" role="alert"></div>
+      <button id="btnSubmit" class="primary block" type="submit">Find best charger</button>
+    </form>
+
+    <section id="result" class="hidden" aria-live="polite"></section>
+    <section id="reservationBox" class="hidden" aria-live="polite"></section>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>
