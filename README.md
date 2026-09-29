@@ -60,6 +60,10 @@ There are two ESP32 sketches in `firmware/`. Both are **low-voltage demos** (12 
 | `firmware/esp32_station_a/` | The GridPulse station device: INA219 current sensing, PWM/MOSFET output, button, failsafes, dry-run mode | the backend's device protocol (`/device/register`, `/device/{id}/command`, `/device/{id}/ack`, `/telemetry/update`) |
 | `firmware/relay_bulb_node/` | A simple on/off **relay + push-button bulb node** (`bulb-01`) | two URLs you configure (`POST_URL`, `GET_URL`) |
 
+**Pointing `esp32_station_a` at the deployed backend:** set `BACKEND_BASE_URL` to your `https://...onrender.com` address and
+`DEVICE_API_KEY` to the key Render generated (Render dashboard, Environment). The sketch speaks both `http://` (LAN) and `https://`;
+with `TLS_INSECURE = true` the traffic is encrypted but the server certificate is not verified (demo setting).
+
 ### `relay_bulb_node`: relay + button bulb node
 
 A small standalone node that switches a bulb through a relay, from either a physical button or a remote command.

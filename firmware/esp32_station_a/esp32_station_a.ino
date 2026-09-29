@@ -27,6 +27,7 @@
  */
 #include <Arduino.h>
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <Wire.h>
 #include <Adafruit_INA219.h>
@@ -37,7 +38,7 @@
 // =====================================================================================================
 #define WIFI_SSID          "YOUR_WIFI_NAME"
 #define WIFI_PASSWORD      "YOUR_WIFI_PASSWORD"
-#define BACKEND_BASE_URL   "http://192.168.1.50:8000"   // laptop LAN IP, port of `uvicorn`; plain http on the LAN
+#define BACKEND_BASE_URL   "http://192.168.1.50:8000"   // LAN dev: http://<laptop-ip>:8000  |  deployed: https://gridpulse-api-yjd1.onrender.com
 #define DEVICE_ID          "esp32-station-a"            // must match the station's device id (seeded: Station A)
 #define STATION_CODE       "A"                          // bind to this station on register ("" = do not bind)
 #define FIRMWARE_VERSION   "gridpulse-esp32 1.1.0"
@@ -50,6 +51,10 @@ constexpr int PIN_BUTTON     = 27;   // push button to GND (uses the internal pu
 constexpr int PIN_OUTPUT     = 25;   // MOSFET gate (via the LR7843 module's input), PWM
 constexpr int PIN_STATUS_LED = 2;    // on-board LED
 constexpr uint8_t INA219_I2C_ADDR = 0x40;
+
+// TLS for https:// backends. true = encrypted but the server certificate is NOT verified (fine for a demo on your own
+// network, not for anything sensitive). Verifying needs the server's root CA pinned in the sketch.
+constexpr bool TLS_INSECURE = true;
 
 // Output
 constexpr bool     DRY_RUN            = true;   // true = NEVER drive PIN_OUTPUT (MOSFET/bulb not connected yet)
@@ -224,11 +229,21 @@ static void checkFaults(const Reading& r) {
 
 // ---- http ------------------------------------------------------------------------------------------
 static int httpCall(bool isPost, const String& path, const String& body, String& out) {
-  WiFiClient client;
+  WiFiClient plain;
+  WiFiClientSecure secure;
   HTTPClient http;
   http.setConnectTimeout(HTTP_TIMEOUT_MS);
   http.setTimeout(HTTP_TIMEOUT_MS);
-  if (!http.begin(client, String(BACKEND_BASE_URL) + path)) return -1;
+  const String url = String(BACKEND_BASE_URL) + path;
+  bool started;
+  if (url.startsWith("https://")) {
+    if (TLS_INSECURE) secure.setInsecure();
+    secure.setTimeout(HTTP_TIMEOUT_MS / 1000 + 1);
+    started = http.begin(secure, url);
+  } else {
+    started = http.begin(plain, url);
+  }
+  if (!started) return -1;
   if (strlen(DEVICE_API_KEY) > 0) http.addHeader("X-Device-Key", DEVICE_API_KEY);
   int code;
   if (isPost) {
