@@ -19,3 +19,4 @@ npm_install.log
 *.db-shm
 *.db-journal
 *.sqlite
+firmware/**/config.h

@@ -368,7 +368,37 @@ export interface TimelineItem {
   end_min: number;
 }
 
+export interface BulbView {
+  device_id: string;
+  name: string;
+  online: boolean;
+  seen: boolean;
+  state: "on" | "off" | "unknown";
+  reported_on: boolean | null;
+  desired_on: boolean;
+  sync: "in_sync" | "pending" | "unknown";
+  last_source: string | null;
+  last_seen_at: string | null;
+  age_s: number | null;
+  last_state_change_at: string | null;
+  rssi: number | null;
+  firmware: string | null;
+  commanded_by: string | null;
+  commanded_at: string | null;
+  command_seq: number;
+}
+
+export interface BulbEvent {
+  id: number;
+  ts: string;
+  kind: "status" | "command";
+  on: boolean | null;
+  source: string | null;
+  detail: string | null;
+}
+
 export interface OperatorState {
+  bulbs?: BulbView[];
   now: string;
   totals: { stations: number; stations_online: number; active_sessions: number; queued: number; ev_load_kw: number };
   stations: OperatorStation[];

@@ -276,6 +276,11 @@ Nominatim with DB cache, 1 req/s throttle, coordinate fallback. Legacy open endp
 **Preserve:** drivers only ever see their own data (404 not 403 for others' ids); request driver_name comes from the account, never the client;
 AI only rewords explanations; blank `.env` values use defaults (comments must not follow blank values).
 
+**Bulb node (relay + button):** device id convention `bulb-01`; pins relay=GPIO25 (active-LOW, `RELAY_ACTIVE_LOW`), button=GPIO27 (INPUT_PULLUP);
+API `/api/bulb/{id}/status|command` (device key) + `/api/operator/bulbs*`; desired-vs-reported model, button press wins, boot/heartbeat never
+change desired; secrets only in git-ignored `firmware/gridpulse_bulb_node/config.h`. See docs/bulb-node.md. Unresolved: not yet flashed/verified on
+the real board; Wi-Fi password was shared in chat (rotate); free Render sleeps/resets; poll latency up to 3 s.
+
 ## 21. Build Priorities
 
 1. Deterministic engine correct + tested (this is the product).

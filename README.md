@@ -58,11 +58,18 @@ There are two ESP32 sketches in `firmware/`. Both are **low-voltage demos** (12 
 | Sketch | What it is | Talks to |
 |---|---|---|
 | `firmware/esp32_station_a/` | The GridPulse station device: INA219 current sensing, PWM/MOSFET output, button, failsafes, dry-run mode | the backend's device protocol (`/device/register`, `/device/{id}/command`, `/device/{id}/ack`, `/telemetry/update`) |
-| `firmware/relay_bulb_node/` | A simple on/off **relay + push-button bulb node** (`bulb-01`) | two URLs you configure (`POST_URL`, `GET_URL`) |
+| `firmware/gridpulse_bulb_node/` | Relay + push-button bulb node, **integrated with the dashboard** | `/api/bulb/{id}/status` and `/command` |
+| `firmware/relay_bulb_node/` | The original standalone relay + button sketch (`bulb-01`) | two URLs you configure (`POST_URL`, `GET_URL`) |
 
 **Pointing `esp32_station_a` at the deployed backend:** set `BACKEND_BASE_URL` to your `https://...onrender.com` address and
 `DEVICE_API_KEY` to the key Render generated (Render dashboard, Environment). The sketch speaks both `http://` (LAN) and `https://`;
 with `TLS_INSECURE = true` the traffic is encrypted but the server certificate is not verified (demo setting).
+
+### `gridpulse_bulb_node`: the bulb node wired into GridPulse (recommended)
+
+The relay + button node, integrated end to end: the operator dashboard (**Hardware** tab) shows the bulb's live state, sends ON/OFF, and
+shows whether the last change came from the physical button or a remote command. Full architecture, API contract, wiring, setup and
+test checklist: **[docs/bulb-node.md](docs/bulb-node.md)**. Secrets live in a git-ignored `config.h` (copy `config.example.h`).
 
 ### `relay_bulb_node`: relay + button bulb node
 

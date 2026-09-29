@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session as DbSession
 from ..config import settings
 from ..db import utcnow
 from ..models import DriverRequest, ExplanationLog, LiveLocation, Reservation, Station
-from . import routing
+from . import bulbs, routing
 from .control import recent_events, refresh_control_state
 from .devices import ensure_placeholder_devices, hardware_summary, list_views
 from .telemetry import latest_all
@@ -187,6 +187,7 @@ def build_dashboard_state(db: DbSession) -> dict:
         "latest_recommendation": latest_rec,
         "recent_requests": requests,
         "telemetry": telemetry,
+        "bulbs": bulbs.list_views(db, now),
         "devices": device_views,
         "hardware_summary": hardware_summary(device_views),
         "control_events": recent_events(db, 10),

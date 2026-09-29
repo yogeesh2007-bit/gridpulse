@@ -2,6 +2,7 @@ import { Cpu, FlaskConical, Lock } from "lucide-react";
 import { fmtAge, fmtTime } from "../../lib/format";
 import type { ControlView, DeviceView, OperatorState } from "../../lib/types";
 import { Alert } from "../ui/Alert";
+import { BulbPanel } from "./BulbPanel";
 import { Badge, type Tone } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Section } from "../ui/Card";
@@ -47,6 +48,7 @@ export function HardwarePanel({ state }: { state: OperatorState }) {
   const hw = state.hardware_summary;
   return (
     <div className="space-y-5">
+      <BulbPanel bulbs={state.bulbs ?? []} />
       <Alert kind={hw.mode === "real" ? "success" : "info"} title={hw.mode === "real" ? "Real hardware is live" : hw.mode === "simulated" ? "A simulated device is live" : "No live device: control is simulated by the backend"}>
         {hw.mode === "real"
           ? "Commands below are confirmed by the ESP32 (check the dry-run flag before assuming a physical output)."

@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, Response
 
 from .api import auth as auth_api, driver as driver_api, explain as explain_api, geo as geo_api
-from .api import operator as operator_api, ws as ws_api
+from .api import bulbs as bulbs_api, operator as operator_api, ws as ws_api
 from .config import WEB_DIST, settings
 from .db import SessionLocal, init_db
 from .routers import control, dashboard, devices, drivers, reservations, stations, telemetry
@@ -54,6 +54,8 @@ if settings.cors_origin_list:
 # ---- authenticated product API + realtime ----------------------------------------------------------------
 for _r in (auth_api, driver_api, operator_api, geo_api, explain_api, ws_api):
     app.include_router(_r.router)
+app.include_router(bulbs_api.device)
+app.include_router(bulbs_api.operator)
 
 # ---- device protocol (device key) + legacy open API (only when LEGACY_API_ENABLED=true) ---------------------
 for _r in (stations, drivers, reservations, dashboard, telemetry, control, devices):

@@ -244,3 +244,36 @@ class GeocodeCache(Base):
     display_name: Mapped[str] = mapped_column(String(400))
     short_name: Mapped[str] = mapped_column(String(160))
     fetched_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class BulbDevice(Base):
+    """A relay/bulb node. `desired_on` is what the backend wants, `reported_on` what the device says it is."""
+
+    __tablename__ = "bulb_devices"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    device_id: Mapped[str] = mapped_column(String(40), unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(60), default="")
+    desired_on: Mapped[bool] = mapped_column(Boolean, default=False)
+    reported_on: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    last_source: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    last_seen_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    last_state_change_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    commanded_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    commanded_by: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
+    command_seq: Mapped[int] = mapped_column(Integer, default=0)
+    rssi: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    firmware: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class BulbEvent(Base):
+    __tablename__ = "bulb_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    device_id: Mapped[str] = mapped_column(String(40), index=True)
+    ts: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    kind: Mapped[str] = mapped_column(String(12))  # "status" | "command"
+    on: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    source: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    detail: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
