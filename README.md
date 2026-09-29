@@ -51,6 +51,54 @@ cd ..\web;  npm run typecheck                   # frontend types
 cd ..;      pip install playwright; python scripts\e2e_browser.py   # real-browser end-to-end (server must be running)
 ```
 
+## Hardware code (ESP32)
+
+There are two ESP32 sketches in `firmware/`. Both are **low-voltage demos** (12 V DC at most). Never connect mains.
+
+| Sketch | What it is | Talks to |
+|---|---|---|
+| `firmware/esp32_station_a/` | The GridPulse station device: INA219 current sensing, PWM/MOSFET output, button, failsafes, dry-run mode | the backend's device protocol (`/device/register`, `/device/{id}/command`, `/device/{id}/ack`, `/telemetry/update`) |
+| `firmware/relay_bulb_node/` | A simple on/off **relay + push-button bulb node** (`bulb-01`) | two URLs you configure (`POST_URL`, `GET_URL`) |
+
+### `relay_bulb_node`: relay + button bulb node
+
+A small standalone node that switches a bulb through a relay, from either a physical button or a remote command.
+
+**Wiring**
+
+| Part | ESP32 pin | Notes |
+|---|---|---|
+| Relay module input | GPIO 25 | **active-LOW**: `LOW` = bulb ON, `HIGH` = bulb OFF |
+| Push button | GPIO 27 to GND | uses the internal pull-up, pressed = `LOW` |
+
+**How it works**
+
+1. **Boot:** the relay is set OFF first (before Wi-Fi), then it connects to Wi-Fi and reports `boot`.
+2. **Button:** a 50 ms software debounce; each press toggles the bulb and immediately reports `state_change`.
+3. **Remote control:** every 3 s it polls `GET_URL`. If the reply contains `"bulb_on":true` or `"bulb_on":false` and that differs from the current state, it switches the relay and reports `remote_command`.
+4. **Heartbeat:** every 10 s it reports its state so a server can tell the node is alive.
+5. **Reconnect:** if Wi-Fi drops it reconnects in the main loop (the relay keeps its last state meanwhile).
+
+**What it sends** (`POST` to `POST_URL`, JSON):
+
+```json
+{"device_id":"bulb-01","bulb_on":true,"source":"state_change","rssi":-58}
+```
+
+`source` is one of `boot`, `state_change`, `remote_command`, `heartbeat`. The server answers `GET_URL` with `{"bulb_on":true}` or `{"bulb_on":false}`.
+
+**Set up and flash**
+
+1. Edit the top of `relay_bulb_node.ino`: `WIFI_SSID`, `WIFI_PASS`, `POST_URL`, `GET_URL` (they are placeholders; do not commit real passwords).
+2. Arduino IDE: board *ESP32 Dev Module*, upload. Or PlatformIO: `cd firmware/relay_bulb_node && pio run -t upload && pio device monitor` (115200 baud). It needs no extra libraries and compiles cleanly.
+
+**Things to know**
+
+* It does **not** speak the GridPulse device protocol. It uses its own two URLs and `bulb_on` payloads, so the GridPulse backend does not serve them out of the box. Point the URLs at any small server you control, or use it standalone with the button.
+* GPIO 25 is also the MOSFET output pin in `esp32_station_a`. Do not wire both sketches to the same board at once without changing a pin.
+* The URLs use plain `http` with no authentication, which is fine on a private network for a demo, not for anything else.
+* A relay can switch mains. Keep this project to low-voltage loads only.
+
 ## Project layout
 ```
 backend/app/  main.py config.py db.py models.py security.py deps.py
@@ -59,6 +107,6 @@ backend/app/  main.py config.py db.py models.py security.py deps.py
               services/  scheduling (pure engine) recommendation state booking dashboard control devices
                          realtime (WebSocket manager) scheduler (background clock) geocode routing explanation auth_service
 web/src/      App.tsx main.tsx  auth/  realtime/  hooks/  lib/  components/{ui,layout,driver,operator}  pages/
-firmware/     esp32_station_a (real device)  tools/fake_esp32.py (simulated device)
+firmware/     esp32_station_a (GridPulse device)  relay_bulb_node (relay + button bulb)  tools/fake_esp32.py (simulator)
 docs/         milestone notes, wiring, problem-statement alignment      legacy_ui/  (old static UI, no longer served)
 ```
