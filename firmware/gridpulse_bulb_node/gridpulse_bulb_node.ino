@@ -1,7 +1,7 @@
 /*
  * GridPulse bulb node - ESP32 + relay + push button (verified wiring: relay IN = GPIO25, button = GPIO27 to GND).
  *
- *   button press  -> toggles the relay locally at once, then reports it   (source "manual_button")
+ *   button press  -> toggles the relay locally at once, then reports it   ("manual_button_on" / "manual_button_off")
  *   backend cmd   -> polled every 3 s, applied to the relay, reported      (source "remote_command")
  *   boot / 10 s   -> reports state                                        (sources "boot" / "heartbeat")
  *
@@ -116,7 +116,7 @@ static void handleButton() {
       lastManualPress = millis();
       everManual = true;
       applyRelay(!bulbOn);  // local control never waits for the network
-      postStatus("manual_button");
+      postStatus(bulbOn ? "manual_button_on" : "manual_button_off");  // explicit event, matches the new relay state
     }
   }
 }

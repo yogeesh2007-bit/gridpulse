@@ -2,7 +2,7 @@
 from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, Path
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 from sqlalchemy.orm import Session as DbSession
 
 from ..db import get_db, utcnow
@@ -16,9 +16,14 @@ DeviceId = Path(..., pattern=bulbs.DEVICE_ID_PATTERN, description="lower-case le
 
 class BulbStatusIn(BaseModel):
     bulb_on: bool
-    source: Literal["boot", "heartbeat", "manual_button", "state_change", "remote_command"] = "heartbeat"
+    source: Literal["boot", "heartbeat", "manual_button_on", "manual_button_off", "manual_button", "state_change", "remote_command"] = "heartbeat"
     rssi: Optional[int] = None
     firmware: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _consistent(self):
+        bulbs.check_consistent(self.source, self.bulb_on)
+        return self
 
 
 class BulbCommandIn(BaseModel):
@@ -71,9 +76,14 @@ def events(device_id: str = DeviceId, db: DbSession = Depends(get_db)):
 # ---- compatibility contract: /api/devices/{id}/... (same behaviour, alternative field names) --------------------------
 class DeviceStateIn(BaseModel):
     bulb_on: bool
-    source: Literal["boot", "heartbeat", "manual_button", "state_change", "remote_command"] = "heartbeat"
+    source: Literal["boot", "heartbeat", "manual_button_on", "manual_button_off", "manual_button", "state_change", "remote_command"] = "heartbeat"
     rssi: Optional[int] = None
     firmware_version: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _consistent(self):
+        bulbs.check_consistent(self.source, self.bulb_on)
+        return self
 
 
 class DashboardCommandIn(BaseModel):

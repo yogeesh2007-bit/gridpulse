@@ -48,3 +48,12 @@ bulb - -> adapter -; adapter - -> ESP32 GND. Active-LOW relay by default (`RELAY
 * `TLS_INSECURE = true`: https is encrypted but the certificate is not verified (demo setting).
 * Polling (3 s) is used, not push: simplest robust option on ESP32; latency up to 3 s. MQTT/WebSocket would cut that.
 * The physical bulb path was verified by you (button toggles the relay); the network path is verified here by tests and an emulator, not on your board yet.
+
+## Train-light demo semantics (live vs seeded)
+* **Live (real hardware):** node `bulb-01` = `coach_light`, coach `C1`, zone `entrance_aisle`, `12V DC relay-switched load`, `train_demo`.
+  The firmware reports `boot`, `manual_button_on`, `manual_button_off`, `heartbeat`, `remote_command`. The backend rejects contradictions
+  (`manual_button_on` with `bulb_on=false` is a 422 and is never stored). `mode` is derived from the last event (`manual_override`,
+  `remote_control`, `boot`); `health` is `healthy` while it reports, `offline` (with an alert) when it stops, `unknown` before first contact.
+  Nothing about the bulb is ever simulated. Timestamps are the server's receive time (the ESP32 has no clock).
+* **Seeded (sample data, always labelled "Seeded"):** other lighting points (aisle-02, aisle-03, vestibule-01) and coach systems
+  (door, ventilation, passenger information) in `backend/app/services/train.py`, shown on Operator > Overview. They never claim to be measurements.

@@ -264,6 +264,13 @@ class BulbDevice(Base):
     command_seq: Mapped[int] = mapped_column(Integer, default=0)
     rssi: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     firmware: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    # installation context (static metadata, not telemetry)
+    device_type: Mapped[str] = mapped_column(String(30), default="coach_light")
+    coach_id: Mapped[str] = mapped_column(String(10), default="C1")
+    zone: Mapped[str] = mapped_column(String(30), default="entrance_aisle")
+    voltage_type: Mapped[str] = mapped_column(String(40), default="12V DC relay-switched load")
+    install_context: Mapped[str] = mapped_column(String(30), default="train_demo")
+    mode: Mapped[str] = mapped_column(String(20), default="idle")  # boot | manual_override | remote_control | idle
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 

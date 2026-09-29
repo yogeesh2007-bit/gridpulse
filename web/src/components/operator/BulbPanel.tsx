@@ -11,12 +11,14 @@ import { LiveDot } from "../ui/Meters";
 import { useToast } from "../ui/Toast";
 
 const SOURCE: Record<string, string> = {
-  manual_button: "Button press on the device",
-  state_change: "Button press on the device",
-  remote_command: "Remote command from the dashboard",
+  manual_button_on: "Manual switch: light turned ON",
+  manual_button_off: "Manual switch: light turned OFF",
+  manual_button: "Manual switch",
+  state_change: "Manual switch",
+  remote_command: "Remote command from control room",
   boot: "Device boot",
   heartbeat: "Heartbeat",
-  remote: "Dashboard command",
+  remote: "Control room command",
 };
 
 function BulbCard({ b }: { b: BulbView }) {
@@ -49,7 +51,7 @@ function BulbCard({ b }: { b: BulbView }) {
 
   return (
     <Section
-      title={b.name || b.device_id}
+      title={`Coach ${b.coach_id} · ${b.zone === "entrance_aisle" ? "Entrance light" : b.zone}`}
       subtitle={<span className="font-mono text-xs">{b.device_id}</span>}
       icon={on ? <Lightbulb className="h-5 w-5" /> : <LightbulbOff className="h-5 w-5" />}
       action={
@@ -65,7 +67,7 @@ function BulbCard({ b }: { b: BulbView }) {
         <div className="space-y-3">
           <div>
             <p className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white" data-testid="bulb-state">
-              {b.state === "unknown" ? "No state yet" : on ? "ON" : "OFF"}
+              {b.state === "unknown" ? "No state yet" : on ? "Light ON" : "Light OFF"}
             </p>
             <p className="text-sm text-slate-500 dark:text-slate-400">
               {b.seen ? `Last seen ${fmtAge(b.age_s)}` : "Waiting for the device to connect"}
@@ -80,6 +82,12 @@ function BulbCard({ b }: { b: BulbView }) {
           )}
           {!b.online && b.seen && <Alert kind="warning">The device stopped reporting. The state shown is the last one it sent.</Alert>}
 
+          <div className="flex flex-wrap gap-1.5" aria-label="Node status">
+            <Badge tone={b.health === "healthy" ? "good" : b.health === "offline" ? "warn" : "neutral"}>Status: {b.health}</Badge>
+            <Badge tone="info">{b.mode === "manual_override" ? "Manual switch" : b.mode === "remote_control" ? "Remote control" : b.mode}</Badge>
+            <Badge>{b.voltage_type}</Badge>
+            <Badge tone="good">LIVE hardware</Badge>
+          </div>
           <div className="flex flex-wrap gap-2">
             <Button onClick={() => void send(true)} loading={busy === true} disabled={busy !== null || (on && b.sync === "in_sync")} icon={<Power className="h-4 w-4" />}>
               Turn ON

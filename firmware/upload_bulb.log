@@ -1,0 +1,5 @@
+Usage: pio run [OPTIONS]
+Try 'pio run -h' for help.
+
+Error: No such option: --upload-flags Did you mean --upload-port?
+exit=2

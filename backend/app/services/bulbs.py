@@ -18,8 +18,14 @@ from .state import iso
 
 ONLINE_S = 25.0  # the firmware heartbeats every 10 s and polls every 3 s
 DEFAULT_DEVICE = "bulb-01"
-MANUAL_SOURCES = {"manual_button", "state_change"}  # "state_change" is what the first sketch sent for button presses
-SOURCES = ("boot", "heartbeat", "manual_button", "state_change", "remote_command")
+MANUAL_SOURCES = {"manual_button", "manual_button_on", "manual_button_off", "state_change"}  # physical switch presses
+SOURCES = ("boot", "heartbeat", "manual_button_on", "manual_button_off", "manual_button", "state_change", "remote_command")
+
+
+def check_consistent(source: str, bulb_on: bool) -> None:
+    """A manual_button_on event must report the bulb ON (and _off OFF): contradictions are rejected, never stored."""
+    if (source.endswith("_on") and not bulb_on) or (source.endswith("_off") and bulb_on):
+        raise ValueError(f"source '{source}' contradicts bulb_on={str(bulb_on).lower()}")
 DEVICE_ID_PATTERN = r"^[a-z0-9][a-z0-9_-]{1,39}$"
 
 
@@ -51,6 +57,7 @@ def record_status(db: DbSession, device_id: str, bulb_on: bool, source: str, rss
     d.firmware = firmware or d.firmware
     if changed:
         d.last_state_change_at = now
+    d.mode = "manual_override" if source in MANUAL_SOURCES else ("remote_control" if source == "remote_command" else ("boot" if source == "boot" else d.mode))
     if source in MANUAL_SOURCES:
         d.desired_on = bulb_on  # the button press is the newest intent
         d.command_seq += 1
@@ -64,6 +71,7 @@ def record_status(db: DbSession, device_id: str, bulb_on: bool, source: str, rss
 def set_command(db: DbSession, device_id: str, on: bool, by: str, now: datetime) -> BulbDevice:
     d = get_or_create(db, device_id)
     d.desired_on, d.commanded_by, d.commanded_at = on, by, now
+    d.mode = "remote_control"
     d.command_seq += 1
     _log(db, device_id, "command", on, "remote", f"by {by}", now)
     db.commit()
@@ -81,6 +89,11 @@ def view(d: BulbDevice, now: datetime) -> dict:
         "last_source": d.last_source, "last_seen_at": iso(d.last_seen_at), "age_s": None if age is None else round(age, 1),
         "last_state_change_at": iso(d.last_state_change_at), "rssi": d.rssi, "firmware": d.firmware,
         "commanded_by": d.commanded_by, "commanded_at": iso(d.commanded_at), "command_seq": d.command_seq,
+        "device_type": d.device_type, "coach_id": d.coach_id, "zone": d.zone, "voltage_type": d.voltage_type,
+        "install_context": d.install_context, "mode": d.mode, "live": True,  # this node is real hardware, never seeded
+        # derived from real events only: a node that stopped reporting is flagged, nothing else is ever invented
+        "health": "healthy" if online else ("offline" if d.last_seen_at else "unknown"),
+        "alert": "Node offline: no report for over %ds, last known state shown" % ONLINE_S if (d.last_seen_at and not online) else None,
     }
 
 

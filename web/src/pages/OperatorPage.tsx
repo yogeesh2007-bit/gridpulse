@@ -1,6 +1,7 @@
 import { Activity, BatteryCharging, Cpu, LayoutDashboard, ListChecks, Radio, TimerReset, Users, Zap } from "lucide-react";
 import { useState } from "react";
 import { DecisionPanel } from "../components/operator/DecisionPanel";
+import { TrainPanel } from "../components/operator/TrainPanel";
 import { HardwarePanel } from "../components/operator/HardwarePanel";
 import { QueueBoard, Timeline } from "../components/operator/QueueBoard";
 import { ReservationsTable } from "../components/operator/ReservationsTable";
@@ -78,6 +79,7 @@ export default function OperatorPage() {
                 <Stat label="EV load" value={`${s.totals.ev_load_kw} kW`} icon={<Activity className="h-4 w-4" />} />
                 <Stat label="Urgent waiting" value={urgentWaiting} tone={urgentWaiting ? "bad" : "default"} icon={<TimerReset className="h-4 w-4" />} hint={s.hardware_summary.mode === "real" ? "real hardware live" : s.hardware_summary.mode === "simulated" ? "simulated device" : "software-simulated"} />
               </div>
+              {s.train && <TrainPanel train={s.train} />}
               <div className="grid gap-5 xl:grid-cols-2">{s.stations.map((st) => <StationStatusCard key={st.id} station={st} />)}</div>
               <DecisionPanel rec={s.latest_recommendation} />
               <Section title="Live driver locations" subtitle="Positions shared by drivers with an open request" icon={<Radio className="h-5 w-5" />}>

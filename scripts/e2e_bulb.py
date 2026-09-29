@@ -72,12 +72,12 @@ with sync_playwright() as pw:
     p.locator(f'section:has-text("{DEV}")').get_by_role("button", name="Turn ON").click()
     expect(card).to_have_attribute("data-state", "on", timeout=15000)
     check("remote ON from the dashboard reaches the device and is confirmed", node.on is True)
-    expect(p.locator(f'section:has-text("{DEV}")').get_by_text("Remote command from the dashboard").first).to_be_visible(timeout=10000)
+    expect(p.locator(f'section:has-text("{DEV}")').get_by_text("Remote command from control room").first).to_be_visible(timeout=10000)
     check("UI labels the source as a remote command", True)
 
     node.press()  # someone presses the physical button
     expect(card).to_have_attribute("data-state", "off", timeout=15000)
-    expect(p.locator(f'section:has-text("{DEV}")').get_by_text("Button press on the device").first).to_be_visible(timeout=10000)
+    expect(p.locator(f'section:has-text("{DEV}")').get_by_text("Manual switch").first).to_be_visible(timeout=10000)
     check("manual button press appears in the UI as a button press", True)
     time.sleep(4)
     check("backend did not revert the manual press", node.on is False and httpx.get(f"{BASE}/api/bulb/{DEV}/command").json()["bulb_on"] is False)

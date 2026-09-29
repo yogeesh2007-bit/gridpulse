@@ -163,3 +163,50 @@ def test_devices_contract_needs_the_device_key_for_device_calls_only(client, ope
     assert client.post(f"/api/devices/{DEV}/state", json=body, headers={"X-Device-Key": "k3y-secret"}).status_code == 200
     # the operator's dashboard command uses the sign-in token, never the device key
     assert client.post(f"/api/devices/{DEV}/command", json={"bulb_on": False}, headers=operator[0]).status_code == 200
+
+
+# ---- train-light semantics: hardware events, metadata, consistency ---------------------------------------------------------
+def test_manual_button_on_off_events_mirror_the_relay_exactly(client, operator):
+    h = operator[0]
+    report(client, False, "boot")
+    r = report(client, True, "manual_button_on")
+    assert r.status_code == 200 and r.json()["bulb_on"] is True
+    n = node(client, h)
+    assert (n["state"], n["mode"], n["last_source"], n["commanded_by"], n["health"], n["alert"]) == ("on", "manual_override", "manual_button_on", "button", "healthy", None)
+    report(client, False, "manual_button_off")
+    n = node(client, h)
+    assert (n["state"], n["desired_on"], n["last_source"]) == ("off", False, "manual_button_off")
+
+
+def test_contradictory_events_are_rejected_and_never_stored(client, operator):
+    assert report(client, False, "manual_button_on").status_code == 422
+    assert report(client, True, "manual_button_off").status_code == 422
+    assert client.post("/api/devices/bulb-01/state", json={"bulb_on": False, "source": "manual_button_on"}).status_code == 422
+    assert node(client, operator[0])["seen"] is False  # nothing was recorded
+
+
+def test_train_light_metadata_and_derived_health(client, operator):
+    n = node(client, operator[0])
+    assert (n["device_type"], n["coach_id"], n["zone"], n["voltage_type"], n["install_context"], n["live"]) == (
+        "coach_light", "C1", "entrance_aisle", "12V DC relay-switched load", "train_demo", True)
+    assert n["health"] == "unknown" and n["alert"] is None  # never reported: nothing is invented
+    report(client, True, "manual_button_on")
+    with SessionLocal() as db:
+        db.query(BulbDevice).one().last_seen_at = utcnow() - timedelta(seconds=300)
+        db.commit()
+    n = node(client, operator[0])
+    assert n["health"] == "offline" and "offline" in n["alert"].lower() and n["state"] == "on"
+
+
+def test_remote_command_sets_remote_control_mode(client, operator):
+    report(client, False, "boot")
+    assert command(client, operator[0], True).json()["mode"] == "remote_control"
+
+
+def test_train_context_marks_only_the_bulb_as_live(client, operator):
+    report(client, True, "manual_button_on")
+    t = client.get("/api/operator/state", headers=operator[0]).json()["train"]
+    live = [p for p in t["light_points"] if p["live"]]
+    assert [p["device_id"] for p in live] == ["bulb-01"] and live[0]["state"] == "on" and live[0]["seeded"] is False
+    assert all(p["seeded"] and not p["live"] for p in t["light_points"] if p["device_id"] != "bulb-01")
+    assert all(s["seeded"] and not s["live"] for s in t["systems"]) and t["coach"]["id"] == "C1"

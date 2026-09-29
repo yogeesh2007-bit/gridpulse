@@ -386,6 +386,38 @@ export interface BulbView {
   commanded_by: string | null;
   commanded_at: string | null;
   command_seq: number;
+  device_type: string;
+  coach_id: string;
+  zone: string;
+  voltage_type: string;
+  install_context: string;
+  mode: string;
+  live: boolean;
+  health: "healthy" | "offline" | "unknown";
+  alert: string | null;
+}
+
+export interface TrainLightPoint {
+  device_id: string;
+  label: string;
+  zone: string;
+  state: "on" | "off" | "unknown";
+  live: boolean;
+  seeded: boolean;
+  online?: boolean;
+  health?: string;
+  mode?: string;
+  last_source?: string | null;
+  last_seen_at?: string | null;
+}
+
+export interface TrainView {
+  train_id: string;
+  name: string;
+  coach: { id: string; name: string };
+  light_points: TrainLightPoint[];
+  systems: { id: string; label: string; status: string; live: boolean; seeded: boolean }[];
+  note: string;
 }
 
 export interface BulbEvent {
@@ -399,6 +431,7 @@ export interface BulbEvent {
 
 export interface OperatorState {
   bulbs?: BulbView[];
+  train?: TrainView;
   now: string;
   totals: { stations: number; stations_online: number; active_sessions: number; queued: number; ev_load_kw: number };
   stations: OperatorStation[];

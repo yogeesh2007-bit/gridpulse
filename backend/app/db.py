@@ -41,6 +41,11 @@ def _ensure_columns() -> None:
     wanted = {
         "stations": {"device_id": "VARCHAR(64)"},
         "driver_requests": {"deadline_at": "DATETIME", "user_id": "INTEGER"},
+        "bulb_devices": {
+            "device_type": "VARCHAR(30) DEFAULT 'coach_light'", "coach_id": "VARCHAR(10) DEFAULT 'C1'",
+            "zone": "VARCHAR(30) DEFAULT 'entrance_aisle'", "voltage_type": "VARCHAR(40) DEFAULT '12V DC relay-switched load'",
+            "install_context": "VARCHAR(30) DEFAULT 'train_demo'", "mode": "VARCHAR(20) DEFAULT 'idle'",
+        },
         "telemetry": {
             "source": "VARCHAR(12) DEFAULT 'real'", "dry_run": "BOOLEAN DEFAULT 0",
             "sensor_status": "VARCHAR(16) DEFAULT 'ok'", "event": "VARCHAR(32)", "local_override": "BOOLEAN",
