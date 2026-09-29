@@ -137,3 +137,29 @@ def test_a_second_node_is_independent(client, operator):
     ids = {b["device_id"]: b for b in client.get("/api/operator/bulbs", headers=operator[0]).json()}
     assert ids["porch-light"]["desired_on"] is True
     assert ids.get(DEV, {"desired_on": False})["desired_on"] is False  # the other node is untouched
+
+
+# ---- compatibility contract /api/devices/{id}/... ---------------------------------------------------------------------
+def test_devices_contract_state_command_and_dashboard_control(client, operator, driver):
+    r = client.post(f"/api/devices/{DEV}/state", json={"bulb_on": True, "source": "manual_button", "rssi": -55, "firmware_version": "0.1.0"})
+    assert r.status_code == 200 and r.json() == {"ok": True, "device_id": DEV, "bulb_on": True}
+    assert client.get(f"/api/devices/{DEV}/command").json() == {"bulb_on": True, "command_id": "1"}  # the button press became the intent
+    assert node(client, operator[0])["firmware"] == "0.1.0"
+
+    off = client.post(f"/api/devices/{DEV}/command", json={"bulb_on": False, "source": "dashboard"}, headers=operator[0])
+    assert off.status_code == 200 and off.json() == {"ok": True, "bulb_on": False}
+    assert client.get(f"/api/devices/{DEV}/command").json()["bulb_on"] is False
+    assert client.post(f"/api/devices/{DEV}/command", json={"bulb_on": True}, headers=driver[0]).status_code == 403
+    assert client.post(f"/api/devices/{DEV}/command", json={"bulb_on": True}).status_code == 401
+    assert client.post(f"/api/devices/{DEV}/state", json={"source": "boot"}).status_code == 422
+
+
+def test_devices_contract_needs_the_device_key_for_device_calls_only(client, operator, monkeypatch):
+    monkeypatch.setattr(settings, "device_api_key", "k3y-secret")
+    body = {"bulb_on": True, "source": "boot"}
+    assert client.post(f"/api/devices/{DEV}/state", json=body).status_code == 401  # missing key
+    assert client.post(f"/api/devices/{DEV}/state", json=body, headers={"X-Device-Key": "wrong"}).status_code == 401  # invalid key
+    assert client.get(f"/api/devices/{DEV}/command").status_code == 401
+    assert client.post(f"/api/devices/{DEV}/state", json=body, headers={"X-Device-Key": "k3y-secret"}).status_code == 200
+    # the operator's dashboard command uses the sign-in token, never the device key
+    assert client.post(f"/api/devices/{DEV}/command", json={"bulb_on": False}, headers=operator[0]).status_code == 200

@@ -56,6 +56,8 @@ for _r in (auth_api, driver_api, operator_api, geo_api, explain_api, ws_api):
     app.include_router(_r.router)
 app.include_router(bulbs_api.device)
 app.include_router(bulbs_api.operator)
+app.include_router(bulbs_api.devices_device)
+app.include_router(bulbs_api.devices_operator)
 
 # ---- device protocol (device key) + legacy open API (only when LEGACY_API_ENABLED=true) ---------------------
 for _r in (stations, drivers, reservations, dashboard, telemetry, control, devices):

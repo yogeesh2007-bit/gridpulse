@@ -66,3 +66,43 @@ def send_command(body: BulbCommandIn, device_id: str = DeviceId, user: User = De
 @operator.get("/{device_id}/events")
 def events(device_id: str = DeviceId, db: DbSession = Depends(get_db)):
     return bulbs.recent_events(db, device_id)
+
+
+# ---- compatibility contract: /api/devices/{id}/... (same behaviour, alternative field names) --------------------------
+class DeviceStateIn(BaseModel):
+    bulb_on: bool
+    source: Literal["boot", "heartbeat", "manual_button", "state_change", "remote_command"] = "heartbeat"
+    rssi: Optional[int] = None
+    firmware_version: Optional[str] = None
+
+
+class DashboardCommandIn(BaseModel):
+    bulb_on: bool
+    source: Literal["dashboard"] = "dashboard"
+
+
+devices_device = APIRouter(prefix="/api/devices", tags=["bulb-device"], dependencies=[Depends(device_auth)])
+devices_operator = APIRouter(prefix="/api/devices", tags=["bulbs"], dependencies=[Depends(require_operator)])
+
+
+@devices_device.post("/{device_id}/state")
+def device_state(body: DeviceStateIn, device_id: str = DeviceId, db: DbSession = Depends(get_db)):
+    """Device reports its state. Same as /api/bulb/{id}/status; `firmware_version` is accepted as the firmware field."""
+    d = bulbs.record_status(db, device_id, body.bulb_on, body.source, body.rssi, body.firmware_version, utcnow())
+    realtime.poke()
+    return {"ok": True, "device_id": d.device_id, "bulb_on": bool(d.reported_on)}
+
+
+@devices_device.get("/{device_id}/command")
+def device_command(device_id: str = DeviceId, db: DbSession = Depends(get_db)):
+    d = bulbs.get_or_create(db, device_id)
+    db.commit()
+    return {"bulb_on": d.desired_on, "command_id": str(d.command_seq)}
+
+
+@devices_operator.post("/{device_id}/command")
+def dashboard_command(body: DashboardCommandIn, device_id: str = DeviceId, user: User = Depends(require_operator), db: DbSession = Depends(get_db)):
+    """Operator sets the desired state (requires an operator sign-in, not the device key)."""
+    d = bulbs.set_command(db, device_id, body.bulb_on, user.name, utcnow())
+    realtime.poke()
+    return {"ok": True, "bulb_on": d.desired_on}

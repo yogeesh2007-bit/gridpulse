@@ -18,7 +18,8 @@
 //   POST {BASE}/api/bulb/{id}/status   {"bulb_on":bool,"source":"boot|heartbeat|manual_button|remote_command","rssi":n,"firmware":"..."}
 //   GET  {BASE}/api/bulb/{id}/command  -> {"bulb_on":bool,"seq":n,...}
 static const char* FIRMWARE = "gp-bulb 1.0.0";
-static const bool TLS_INSECURE = true;  // https is encrypted but the certificate is NOT verified (demo setting)
+// DEMO-ONLY: https is encrypted but the server certificate is NOT verified (no CA pinned yet). Set false once a root CA is added.
+static const bool TLS_INSECURE = true;
 
 // ---- timing ----------------------------------------------------------------------------------------------------
 static const unsigned long DEBOUNCE_MS = 50;
@@ -35,6 +36,9 @@ static int stableButtonState = HIGH;
 static unsigned long lastChangeTime = 0;
 static unsigned long lastHeartbeat = 0, lastPoll = 0, lastWifiTry = 0, lastManualPress = 0;
 static bool everManual = false;
+static bool keyConfigured() {  // true only for a real-looking key; the placeholder and empty count as "not configured"
+  return strlen(DEVICE_API_KEY) > 0 && strstr(DEVICE_API_KEY, "PASTE_") == nullptr;
+}
 
 static void applyRelay(bool on) {
   bulbOn = on;
@@ -58,7 +62,7 @@ static int httpCall(bool post, const String& path, const String& body, String& o
     ok = http.begin(plain, url);
   }
   if (!ok) return -1;
-  if (strlen(DEVICE_API_KEY) > 0) http.addHeader("X-Device-Key", DEVICE_API_KEY);
+  if (keyConfigured()) http.addHeader("X-Device-Key", DEVICE_API_KEY);
   int code;
   if (post) {
     http.addHeader("Content-Type", "application/json");
@@ -78,7 +82,7 @@ static void postStatus(const char* source) {
   String resp;
   const int code = httpCall(true, String("/api/bulb/") + DEVICE_ID + "/status", body, resp);
   Serial.printf("[net] POST status (%s) -> %d\n", source, code);
-  if (code == 401) Serial.println("[net] 401: DEVICE_API_KEY in config.h does not match the backend");
+  if (code == 401) Serial.println("[net] 401 Unauthorized: DEVICE_API_KEY is missing or does not match the backend (local button control still works)");
   else if (code < 0 || code >= 400) Serial.println(resp);
 }
 
@@ -140,6 +144,9 @@ void setup() {
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   Serial.printf("\n=== %s | device %s | relay GPIO%d (%s) | button GPIO%d ===\n", FIRMWARE, DEVICE_ID, RELAY_PIN,
                 RELAY_ACTIVE_LOW ? "active-LOW" : "active-HIGH", BUTTON_PIN);
+  Serial.printf("[cfg] backend %s | API key %s | TLS %s\n", BACKEND_BASE_URL,
+                keyConfigured() ? "configured" : "NOT configured (paste DEVICE_API_KEY into config.h)",
+                String(BACKEND_BASE_URL).startsWith("https://") ? (TLS_INSECURE ? "on, cert NOT verified (demo)" : "on, verified") : "off (http)");
   connectWiFi(true);
   postStatus("boot");
   lastHeartbeat = lastPoll = millis();

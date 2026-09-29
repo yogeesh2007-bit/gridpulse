@@ -9,7 +9,7 @@
 // Deployed: "https://gridpulse-api-yjd1.onrender.com"     Local dev: "http://<laptop-ip>:8000"
 #define BACKEND_BASE_URL "https://gridpulse-api-yjd1.onrender.com"
 // Must equal the backend's DEVICE_API_KEY (Render dashboard > Environment). Empty = backend has no key.
-#define DEVICE_API_KEY ""
+#define DEVICE_API_KEY "PASTE_THE_RENDER_DEVICE_API_KEY_HERE"
 // Lower-case letters, digits, - and _ (2 to 40 chars). One id per physical node.
 #define DEVICE_ID "bulb-01"
 
