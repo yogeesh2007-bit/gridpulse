@@ -20,3 +20,4 @@ npm_install.log
 *.db-journal
 *.sqlite
 firmware/**/config.h
+firmware/*.log
